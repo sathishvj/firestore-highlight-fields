@@ -10,9 +10,20 @@
       margin: 0 auto;
     }
     h2 { color: #ffa500; }
+    .section { margin-bottom: 25px; }
+    label { display: block; margin-bottom: 8px; font-weight: bold; color: #444; }
+    #url-input { 
+      width: 100%; 
+      padding: 12px; 
+      border: 1px solid #ccc; 
+      border-radius: 4px; 
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      font-family: monospace;
+    }
     textarea { 
       width: 100%; 
-      height: 350px; 
+      height: 300px; 
       margin-bottom: 10px; 
       font-family: monospace; 
       padding: 15px;
@@ -23,15 +34,24 @@
     }
     .help { color: #666; margin-bottom: 20px; font-size: 0.95em; line-height: 1.5; }
     code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
-    #save { 
-      padding: 12px 24px; 
-      background: #ffa500; 
-      color: white; 
+    button { 
+      padding: 10px 20px; 
       border: none; 
       border-radius: 4px;
       cursor: pointer; 
       font-weight: bold;
       font-size: 14px;
+      transition: background 0.2s;
+    }
+    #extract { 
+      background: #eee; 
+      color: #333; 
+      margin-bottom: 20px;
+    }
+    #extract:hover { background: #ddd; }
+    #save { 
+      background: #ffa500; 
+      color: white; 
     }
     #save:hover { background: #e69500; }
     #status { margin-top: 15px; color: green; height: 1.2em; font-weight: bold; }
@@ -39,22 +59,35 @@
 </head>
 <body>
   <h2>Highlight Settings</h2>
+  
+  <div class="section">
+    <label for="url-input">enter firestore url and click extract</label>
+    <input type="text" id="url-input" placeholder="https://console.firebase.google.com/project/my-project/firestore/databases/(default)/data/organizations/...">
+    <button id="extract">Extract Fields</button>
+  </div>
+
   <div class="help">
     Enter rules to highlight specific fields in the Firestore Emulator or Production Console.<br>
     <strong>Format:</strong> <code>Project | Database | Collection list in order | Fields</code><br><br>
     <strong>Components:</strong>
     <ul>
-      <li><strong>Project:</strong> Your Firebase project ID (e.g., <code>utilery-project</code>). In emulator, this field is ignored.</li>
-      <li><strong>Database:</strong> Usually <code>default</code> in emulator and <code>-default-</code> in prod.</li>
-      <li><strong>Collection list in order:</strong> Comma-separated names of collections in the path in order (e.g., <code>organizations, groups</code>).</li>
-      <li><strong>Fields:</strong> Comma-separated field names to highlight (e.g., <code>name, status, address.state</code>).</li>
+      <li><strong>Project:</strong> Your Firebase project ID (e.g., <code>vj-project</code>). In emulator, often <code>default</code>.</li>
+      <li><strong>Database:</strong> Usually <code>default</code> or <code>(default)</code>.</li>
+      <li><strong>Collection list in order:</strong> Comma-separated names of collections in the path (e.g., <code>organizations, groups</code>).</li>
+      <li><strong>Fields:</strong> Comma-separated field names to highlight (e.g., <code>name, status</code>).</li>
     </ul>
     <strong>Examples:</strong><br>
-	<code>utilery-project | -default- | organizations, groups | name, description</code>: to highlight name and description fields in /utilery-project/firestore/databases/-default-/organizations/*/groups/* <br>
+    <code>vj-project | (default) | organizations, groups | name, status</code><br>
+    <code>default | default | questions | learning.objective, examTags</code> (Emulator)
   </div>
-  <textarea id="settings" placeholder="my-project | (default) | organizations, groups | name, status"></textarea>
-  <button id="save">Save Settings</button>
-  <div id="status"></div>
+
+  <div class="section">
+    <label for="settings">Active Rules</label>
+    <textarea id="settings" placeholder="my-project | (default) | organizations, groups | name, status"></textarea>
+    <button id="save">Save Settings</button>
+    <div id="status"></div>
+  </div>
+
   <script src="options.js"></script>
 </body>
 </html>
