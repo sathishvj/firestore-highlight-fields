@@ -1,6 +1,6 @@
 {
   "name": "Firestore Field Highlighter",
-  "version": "1.1",
+  "version": "1.0",
   "manifest_version": 3,
   "description": "Highlight specific fields in Firestore Emulator and Production Console.",
   "icons": {
@@ -11,8 +11,11 @@
     "256": "icons/icon256.png"
   },
   "permissions": ["storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_title": "Open Settings"
   },
   "options_page": "options.html",
   "content_scripts": [

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Firestore Highlight Settings</title>
+  <title>Firestore Highlight Fields: Settings</title>
   <style>
     body { 
       padding: 20px; 
@@ -41,19 +41,18 @@
   <h2>Highlight Settings</h2>
   <div class="help">
     Enter rules to highlight specific fields in the Firestore Emulator or Production Console.<br>
-    <strong>Format:</strong> <code>Project | Database | Collection List | Fields</code><br><br>
+    <strong>Format:</strong> <code>Project | Database | Collection list in order | Fields</code><br><br>
     <strong>Components:</strong>
     <ul>
-      <li><strong>Project:</strong> Your Firebase project ID (e.g., <code>vj-project</code>). In emulator, often <code>default</code>.</li>
-      <li><strong>Database:</strong> Usually <code>default</code> or <code>(default)</code>.</li>
-      <li><strong>Collection List:</strong> Comma-separated names of collections in the path (e.g., <code>organizations, groups</code>).</li>
-      <li><strong>Fields:</strong> Comma-separated field names to highlight (e.g., <code>name, status</code>).</li>
+      <li><strong>Project:</strong> Your Firebase project ID (e.g., <code>utilery-project</code>). In emulator, this field is ignored.</li>
+      <li><strong>Database:</strong> Usually <code>default</code> in emulator and <code>-default-</code> in prod.</li>
+      <li><strong>Collection list in order:</strong> Comma-separated names of collections in the path in order (e.g., <code>organizations, groups</code>).</li>
+      <li><strong>Fields:</strong> Comma-separated field names to highlight (e.g., <code>name, status, address.state</code>).</li>
     </ul>
     <strong>Examples:</strong><br>
-    <code>vj-project | default | organizations, groups | name, status</code><br>
-    <code>default | default | questions | learning.objective, examTags</code> (Emulator)
+	<code>utilery-project | -default- | organizations, groups | name, description</code>: to highlight name and description fields in /utilery-project/firestore/databases/-default-/organizations/*/groups/* <br>
   </div>
-  <textarea id="settings" placeholder="my-project | default | organizations, groups | name, status"></textarea>
+  <textarea id="settings" placeholder="my-project | (default) | organizations, groups | name, status"></textarea>
   <button id="save">Save Settings</button>
   <div id="status"></div>
   <script src="options.js"></script>

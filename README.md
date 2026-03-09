@@ -20,10 +20,10 @@ A lightweight Chrome Extension that allows you to highlight specific fields in t
 ## How to Use
 
 1. Right-click the extension icon in your browser toolbar and select **Options**.
-2. Enter your highlight rules in the format: `Project | Database | Collections | Fields`.
+2. Enter your highlight rules in the format: `Project | Database | Collection list in order | Fields`.
    - **Project**: Your Firebase project ID (e.g., `my-project`). Use `*` to match any project.
    - **Database**: The database ID (e.g., `(default)` or `-default-`). Must match the URL segment exactly. Use `*` to match any database.
-   - **Collections**: A comma-separated list of collection names (e.g., `organizations, groups`).
+   - **Collection list in order**: A comma-separated list of collection names (e.g., `organizations, groups`).
    - **Fields**: A comma-separated list of field names to highlight.
 3. Click **Save Settings**.
 4. Navigate to your Firestore database. Matching fields will now be highlighted with an orange background.
