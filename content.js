@@ -70,7 +70,10 @@ async function getSettings() {
         if (data && data.highlightSettings) {
           const lines = data.highlightSettings.split('\n');
           lines.forEach(line => {
-            const parts = line.split('|');
+            const cleanLine = line.split('//')[0].trim();
+            if (!cleanLine) return;
+
+            const parts = cleanLine.split('|');
             if (parts.length === 4) {
               const project = parts[0].trim();
               const database = parts[1].trim();
