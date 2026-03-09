@@ -10,15 +10,20 @@ function getFirestoreInfo() {
   const path = window.location.pathname;
   
   if (host === "localhost" || host === "127.0.0.1") {
-    // Emulator: /firestore/{project}/data/{encodedPath}
+    // Emulator: /firestore/{database}/data/{encodedPath}
+    // OR: /firestore/{project}/{database}/data/{encodedPath}
+    // Based on user feedback: /firestore/{database}/data/{collection1}/{docId}...
     const match = path.match(/\/firestore\/(.*?)\/data\/(.*)/);
     if (match) {
-      const project = match[1];
-      const database = "default";
+      const database = match[1];
+      const project = "default"; // Emulator often uses a default project or it's implicitly the database name
       const encodedPath = match[2];
       const decodedPath = decodeURIComponent(encodedPath.replace(/~2F/g, '/')).replace(/\/+/g, '/');
       const parts = decodedPath.split('/').filter(p => p !== "");
+      
+      // Every even index in parts is a collection name (0, 2, 4...)
       const collections = parts.filter((_, i) => i % 2 === 0);
+      
       return { project, database, collections };
     }
   } else if (host === "console.firebase.google.com") {
@@ -116,7 +121,7 @@ function getProductionFullFieldPath(keyElem) {
 }
 
 /**
- * Core highlighting logic, now scoped to specific panels in Production.
+ * Core highlighting logic, now scoped to specific panels or views.
  */
 async function highlightFields() {
   const currentInfo = getFirestoreInfo();
@@ -126,33 +131,49 @@ async function highlightFields() {
   const host = window.location.hostname;
 
   if (host === "localhost" || host === "127.0.0.1") {
-    // --- Emulator Path (Single View) ---
-    const activeRules = settings.filter(rule => {
-      if (rule.project !== "*" && rule.project.toLowerCase() !== currentInfo.project.toLowerCase()) return false;
-      if (rule.database !== "*" && rule.database.toLowerCase() !== currentInfo.database.toLowerCase()) return false;
-      if (rule.collections.length === 0) return false;
-      const ruleStr = rule.collections.join(',');
-      const currentStr = currentInfo.collections.join(',').toLowerCase();
-      return currentStr.endsWith(ruleStr);
-    });
+    // --- Emulator Path (Multi-Panel Support) ---
+    // Emulator uses .Firestore-Field-List for each document view.
+    // If nested panels are visible, we iterate through them.
+    const fieldLists = document.querySelectorAll('.Firestore-Field-List');
+    
+    fieldLists.forEach((list, index) => {
+      // In Emulator, depth corresponds to which list we are looking at.
+      // Usually, list 0 is the root doc, list 1 is the sub-collection doc, etc.
+      const depth = index + 1;
+      const panelCollections = currentInfo.collections.slice(0, depth);
 
-    const fieldsToHighlight = new Set();
-    activeRules.forEach(rule => rule.fields.forEach(f => fieldsToHighlight.add(f)));
+      const activeRules = settings.filter(rule => {
+        // Project Match (In emulator, we often default to matching if rule is '*' or 'default')
+        if (rule.project !== "*" && rule.project.toLowerCase() !== currentInfo.project.toLowerCase() && rule.project !== "default") return false;
+        
+        // Database Match
+        if (rule.database !== "*" && rule.database.toLowerCase() !== currentInfo.database.toLowerCase()) return false;
+        
+        if (rule.collections.length === 0) return false;
+        
+        const ruleStr = rule.collections.join(',');
+        const currentStr = panelCollections.join(',').toLowerCase();
+        return currentStr.endsWith(ruleStr);
+      });
 
-    const fieldKeys = document.querySelectorAll('.FieldPreview-key');
-    fieldKeys.forEach(keyElem => {
-      const fullFieldName = getEmulatorFullFieldPath(keyElem);
-      const leafName = keyElem.textContent.trim();
-      const parent = keyElem.closest('.FieldPreview');
-      if (parent) {
-        if (fieldsToHighlight.has(fullFieldName) || fieldsToHighlight.has(leafName)) {
-          parent.style.backgroundColor = 'rgba(255, 165, 0, 0.2)';
-          parent.style.borderLeft = '4px solid orange';
-        } else if (parent.style.borderLeft === '4px solid orange') {
-          parent.style.backgroundColor = '';
-          parent.style.borderLeft = '';
+      const fieldsToHighlight = new Set();
+      activeRules.forEach(rule => rule.fields.forEach(f => fieldsToHighlight.add(f)));
+
+      const fieldKeys = list.querySelectorAll('.FieldPreview-key');
+      fieldKeys.forEach(keyElem => {
+        const fullFieldName = getEmulatorFullFieldPath(keyElem);
+        const leafName = keyElem.textContent.trim();
+        const parent = keyElem.closest('.FieldPreview');
+        if (parent) {
+          if (fieldsToHighlight.has(fullFieldName) || fieldsToHighlight.has(leafName)) {
+            parent.style.backgroundColor = 'rgba(255, 165, 0, 0.2)';
+            parent.style.borderLeft = '4px solid orange';
+          } else if (parent.style.borderLeft === '4px solid orange') {
+            parent.style.backgroundColor = '';
+            parent.style.borderLeft = '';
+          }
         }
-      }
+      });
     });
 
   } else if (host === "console.firebase.google.com") {
