@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Firestore Highlight Settings</title>
+  <style>
+    body { 
+      padding: 20px; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h2 { color: #ffa500; }
+    textarea { 
+      width: 100%; 
+      height: 350px; 
+      margin-bottom: 10px; 
+      font-family: monospace; 
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 13px;
+    }
+    .help { color: #666; margin-bottom: 20px; font-size: 0.95em; line-height: 1.5; }
+    code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+    #save { 
+      padding: 12px 24px; 
+      background: #ffa500; 
+      color: white; 
+      border: none; 
+      border-radius: 4px;
+      cursor: pointer; 
+      font-weight: bold;
+      font-size: 14px;
+    }
+    #save:hover { background: #e69500; }
+    #status { margin-top: 15px; color: green; height: 1.2em; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Highlight Settings</h2>
+  <div class="help">
+    Enter rules to highlight specific fields in the Firestore Emulator or Production Console.<br>
+    <strong>Format:</strong> <code>Project | Database | Collection List | Fields</code><br><br>
+    <strong>Components:</strong>
+    <ul>
+      <li><strong>Project:</strong> Your Firebase project ID (e.g., <code>vj-project</code>). In emulator, often <code>default</code>.</li>
+      <li><strong>Database:</strong> Usually <code>default</code> or <code>(default)</code>.</li>
+      <li><strong>Collection List:</strong> Comma-separated names of collections in the path (e.g., <code>organizations, groups</code>).</li>
+      <li><strong>Fields:</strong> Comma-separated field names to highlight (e.g., <code>name, status</code>).</li>
+    </ul>
+    <strong>Examples:</strong><br>
+    <code>vj-project | default | organizations, groups | name, status</code><br>
+    <code>default | default | questions | learning.objective, examTags</code> (Emulator)
+  </div>
+  <textarea id="settings" placeholder="my-project | default | organizations, groups | name, status"></textarea>
+  <button id="save">Save Settings</button>
+  <div id="status"></div>
+  <script src="options.js"></script>
+</body>
+</html>
