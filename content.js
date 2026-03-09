@@ -11,18 +11,14 @@ function getFirestoreInfo() {
   
   if (host === "localhost" || host === "127.0.0.1") {
     // Emulator: /firestore/{project}/data/{encodedPath}
-    // Example: /firestore/default/data/questions/docId
     const match = path.match(/\/firestore\/(.*?)\/data\/(.*)/);
     if (match) {
       const project = match[1];
-      const database = "default"; // Usually default in emulator
+      const database = "default";
       const encodedPath = match[2];
       const decodedPath = decodeURIComponent(encodedPath.replace(/~2F/g, '/')).replace(/\/+/g, '/');
       const parts = decodedPath.split('/').filter(p => p !== "");
-      
-      // Every even index in parts is a collection name (0, 2, 4...)
       const collections = parts.filter((_, i) => i % 2 === 0);
-      
       return { project, database, collections };
     }
   } else if (host === "console.firebase.google.com") {
@@ -31,14 +27,10 @@ function getFirestoreInfo() {
     if (match) {
       const project = match[1];
       const database = match[2];
-      
       const encodedPath = match[3];
       const decodedPath = decodeURIComponent(encodedPath.replace(/~2F/g, '/')).replace(/\/+/g, '/');
       const parts = decodedPath.split('/').filter(p => p !== "");
-      
-      // Every even index is a collection
       const collections = parts.filter((_, i) => i % 2 === 0);
-      
       return { project, database, collections };
     }
   }
@@ -123,77 +115,87 @@ function getProductionFullFieldPath(keyElem) {
   return path.join('.');
 }
 
+/**
+ * Core highlighting logic, now scoped to specific panels in Production.
+ */
 async function highlightFields() {
   const currentInfo = getFirestoreInfo();
   if (!currentInfo) return;
 
   const settings = await getSettings();
-  
-  // Rule Matching logic
-  const activeRules = settings.filter(rule => {
-    // Project Match
-    if (rule.project !== "*" && rule.project.toLowerCase() !== currentInfo.project.toLowerCase()) return false;
-    
-    // Database Match
-    if (rule.database !== "*" && rule.database.toLowerCase() !== currentInfo.database.toLowerCase()) return false;
-    
-    // Collections Match (list must match the end or be fully equal)
-    // Here we check if the user's collections list matches the current path collections exactly.
-    // Or if currentInfo.collections ends with rule.collections
-    if (rule.collections.length === 0) return false;
-    
-    const ruleStr = rule.collections.join(',');
-    const currentStr = currentInfo.collections.join(',').toLowerCase();
-    
-    return currentStr.endsWith(ruleStr);
-  });
-
-  if (activeRules.length === 0) return;
-
-  const fieldsToHighlight = new Set();
-  activeRules.forEach(rule => rule.fields.forEach(f => fieldsToHighlight.add(f)));
-
   const host = window.location.hostname;
+
   if (host === "localhost" || host === "127.0.0.1") {
+    // --- Emulator Path (Single View) ---
+    const activeRules = settings.filter(rule => {
+      if (rule.project !== "*" && rule.project.toLowerCase() !== currentInfo.project.toLowerCase()) return false;
+      if (rule.database !== "*" && rule.database.toLowerCase() !== currentInfo.database.toLowerCase()) return false;
+      if (rule.collections.length === 0) return false;
+      const ruleStr = rule.collections.join(',');
+      const currentStr = currentInfo.collections.join(',').toLowerCase();
+      return currentStr.endsWith(ruleStr);
+    });
+
+    const fieldsToHighlight = new Set();
+    activeRules.forEach(rule => rule.fields.forEach(f => fieldsToHighlight.add(f)));
+
     const fieldKeys = document.querySelectorAll('.FieldPreview-key');
     fieldKeys.forEach(keyElem => {
       const fullFieldName = getEmulatorFullFieldPath(keyElem);
       const leafName = keyElem.textContent.trim();
-      
-      if (fieldsToHighlight.has(fullFieldName) || fieldsToHighlight.has(leafName)) {
-        const parent = keyElem.closest('.FieldPreview');
-        if (parent) {
+      const parent = keyElem.closest('.FieldPreview');
+      if (parent) {
+        if (fieldsToHighlight.has(fullFieldName) || fieldsToHighlight.has(leafName)) {
           parent.style.backgroundColor = 'rgba(255, 165, 0, 0.2)';
           parent.style.borderLeft = '4px solid orange';
-        }
-      } else {
-        const parent = keyElem.closest('.FieldPreview');
-        if (parent && parent.style.borderLeft === '4px solid orange') {
+        } else if (parent.style.borderLeft === '4px solid orange') {
           parent.style.backgroundColor = '';
           parent.style.borderLeft = '';
         }
       }
     });
-  } else if (host === "console.firebase.google.com") {
-    const fieldKeys = document.querySelectorAll('.database-key');
-    fieldKeys.forEach(keyElem => {
-      const fullFieldName = getProductionFullFieldPath(keyElem);
-      const leafName = keyElem.textContent.trim();
 
-      if (fieldsToHighlight.has(fullFieldName) || fieldsToHighlight.has(leafName)) {
-        // Target the click-target container which represents the row background
+  } else if (host === "console.firebase.google.com") {
+    // --- Production Path (Multi-Panel Support) ---
+    const panels = document.querySelectorAll('.panel-container');
+    
+    panels.forEach((panel, index) => {
+      // In Firestore Console, panels are Collection -> Doc -> Collection -> Doc
+      // Document panels (where fields exist) are at odd indices (1, 3, 5...)
+      if (index % 2 === 0) return;
+
+      const depth = (index + 1) / 2;
+      const panelCollections = currentInfo.collections.slice(0, depth);
+      
+      const activeRules = settings.filter(rule => {
+        if (rule.project !== "*" && rule.project.toLowerCase() !== currentInfo.project.toLowerCase()) return false;
+        if (rule.database !== "*" && rule.database.toLowerCase() !== currentInfo.database.toLowerCase()) return false;
+        if (rule.collections.length === 0) return false;
+        
+        const ruleStr = rule.collections.join(',');
+        const currentStr = panelCollections.join(',').toLowerCase();
+        return currentStr.endsWith(ruleStr);
+      });
+
+      const fieldsToHighlight = new Set();
+      activeRules.forEach(rule => rule.fields.forEach(f => fieldsToHighlight.add(f)));
+
+      const fieldKeys = panel.querySelectorAll('.database-key');
+      fieldKeys.forEach(keyElem => {
+        const fullFieldName = getProductionFullFieldPath(keyElem);
+        const leafName = keyElem.textContent.trim();
         const row = keyElem.closest('.database-node-click-target') || keyElem.closest('.database-node');
+        
         if (row) {
-          row.style.backgroundColor = 'rgba(255, 165, 0, 0.15)';
-          row.style.borderLeft = '4px solid orange';
+          if (fieldsToHighlight.has(fullFieldName) || fieldsToHighlight.has(leafName)) {
+            row.style.backgroundColor = 'rgba(255, 165, 0, 0.15)';
+            row.style.borderLeft = '4px solid orange';
+          } else if (row.style.borderLeft === '4px solid orange') {
+            row.style.backgroundColor = '';
+            row.style.borderLeft = '';
+          }
         }
-      } else {
-        const row = keyElem.closest('.database-node-click-target') || keyElem.closest('.database-node');
-        if (row && row.style.borderLeft === '4px solid orange') {
-          row.style.backgroundColor = '';
-          row.style.borderLeft = '';
-        }
-      }
+      });
     });
   }
 }
