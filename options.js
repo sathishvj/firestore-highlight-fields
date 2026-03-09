@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const decodedPath = decodeURIComponent(encodedPath.replace(/~2F/g, '/')).replace(/\/+/g, '/');
           const parts = decodedPath.split('/').filter(p => p !== "");
           const collections = parts.filter((_, i) => i % 2 === 0);
-          rule = `-ignored- | ${database} | ${collections.join(', ')} | `;
+          rule = `-ignored in emulator- | ${database} | ${collections.join(', ')} | // add fields to highlight (comma separated)`;
         }
       } else if (host === "console.firebase.google.com") {
         // Production: .../project/{project}/firestore/databases/{database}/data/{encodedPath}
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const decodedPath = decodeURIComponent(encodedPath.replace(/~2F/g, '/')).replace(/\/+/g, '/');
           const parts = decodedPath.split('/').filter(p => p !== "");
           const collections = parts.filter((_, i) => i % 2 === 0);
-          rule = `${project} | ${database} | ${collections.join(', ')} | `;
+          rule = `${project} | ${database} | ${collections.join(', ')} | // add fields to highlight (comma separated)`;
         }
       }
 
