@@ -17,17 +17,19 @@ function getFirestoreInfo() {
   const path = window.location.pathname;
   
   if (host === "localhost" || host === "127.0.0.1") {
-    // Emulator: /firestore/{projectOrDb}/data/{encodedPath}
+    // Emulator: /firestore/{database}/data/{collection1}/{docId}/{collection2}/{docId}
+    // Example: /firestore/default/data/organizations/__default/groups/__default
     const match = path.match(/\/firestore\/(.*?)\/data\/(.*)/);
     if (match) {
-      const project = match[1]; // In emulator, this is typically the project ID
-      const database = "default"; // Database is usually default in emulator URLs
+      const database = match[1];
+      const project = "emulator"; // Project name is not in the URL; use a dummy value
       const encodedPath = match[2];
       const decodedPath = decodeURIComponent(encodedPath.replace(/~2F/g, '/')).replace(/\/+/g, '/');
       const parts = decodedPath.split('/').filter(p => p !== "");
       
+      // Collections are at even indices (0, 2, 4...)
       const collections = parts.filter((_, i) => i % 2 === 0);
-      return { project, database, collections };
+      return { project, database, collections, isEmulator: true };
     }
   } else if (host === "console.firebase.google.com") {
     // Production: .../project/{project}/firestore/databases/{database}/data/{encodedPath}
@@ -40,7 +42,7 @@ function getFirestoreInfo() {
       const parts = decodedPath.split('/').filter(p => p !== "");
       
       const collections = parts.filter((_, i) => i % 2 === 0);
-      return { project, database, collections };
+      return { project, database, collections, isEmulator: false };
     }
   }
   return null;
@@ -151,9 +153,6 @@ function getProductionFullFieldPath(keyElem) {
 
 let isHighlighting = false;
 
-/**
- * Core highlighting logic, now correctly scoped to panels.
- */
 async function highlightFields() {
   if (isHighlighting) return;
   if (!isContextValid()) return;
@@ -166,15 +165,18 @@ async function highlightFields() {
     const settings = await getSettings();
     const host = window.location.hostname;
 
-    if (host === "localhost" || host === "127.0.0.1") {
+    if (currentInfo.isEmulator) {
+      // --- Emulator Path ---
       const fieldLists = document.querySelectorAll('.Firestore-Field-List');
       fieldLists.forEach((list, index) => {
         const depth = index + 1;
         const panelCollections = currentInfo.collections.slice(0, depth);
 
         const activeRules = settings.filter(rule => {
-          if (rule.project !== "*" && rule.project.toLowerCase() !== currentInfo.project.toLowerCase()) return false;
+          // SKIP Project ID match in emulator as it's not in the URL
+          // Match Database (Normalized)
           if (!isDatabaseMatch(rule.database, currentInfo.database)) return false;
+          
           if (rule.collections.length === 0) return false;
           const ruleStr = rule.collections.join(',');
           const currentStr = panelCollections.join(',').toLowerCase();
@@ -201,7 +203,8 @@ async function highlightFields() {
         });
       });
 
-    } else if (host === "console.firebase.google.com") {
+    } else {
+      // --- Production Path ---
       const panels = document.querySelectorAll('.panel-container');
       panels.forEach((panel, index) => {
         if (index === 0 || index % 2 !== 0) return; 
