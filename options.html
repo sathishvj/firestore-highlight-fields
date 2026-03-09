@@ -46,7 +46,9 @@
     #extract { 
       background: #eee; 
       color: #333; 
-      margin-bottom: 20px;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      font-size: 11px;
     }
     #extract:hover { background: #ddd; }
     #save { 
@@ -60,12 +62,6 @@
 <body>
   <h2>Highlight Settings</h2>
   
-  <div class="section">
-    <label for="url-input">enter firestore url and click extract</label>
-    <input type="text" id="url-input" placeholder="https://console.firebase.google.com/project/my-project/firestore/databases/(default)/data/organizations/...">
-    <button id="extract">Extract Fields</button>
-  </div>
-
   <div class="help">
     Enter rules to highlight specific fields in the Firestore Emulator or Production Console.<br>
     <strong>Format:</strong> <code>Project | Database | Collection list in order | Fields</code><br><br>
@@ -79,6 +75,12 @@
     <strong>Examples:</strong><br>
     <code>vj-project | (default) | organizations, groups | name, status</code><br>
     <code>default | default | questions | learning.objective, examTags</code> (Emulator)
+  </div>
+
+  <div class="section">
+    <label for="url-input">enter firestore url and click extract</label>
+    <input type="text" id="url-input" placeholder="https://console.firebase.google.com/project/my-project/firestore/databases/(default)/data/organizations/...">
+    <button id="extract">Extract Fields</button>
   </div>
 
   <div class="section">
