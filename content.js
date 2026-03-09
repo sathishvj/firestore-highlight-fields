@@ -11,19 +11,16 @@ function getFirestoreInfo() {
   
   if (host === "localhost" || host === "127.0.0.1") {
     // Emulator: /firestore/{database}/data/{encodedPath}
-    // OR: /firestore/{project}/{database}/data/{encodedPath}
-    // Based on user feedback: /firestore/{database}/data/{collection1}/{docId}...
     const match = path.match(/\/firestore\/(.*?)\/data\/(.*)/);
     if (match) {
       const database = match[1];
-      const project = "default"; // Emulator often uses a default project or it's implicitly the database name
+      const project = "default";
       const encodedPath = match[2];
       const decodedPath = decodeURIComponent(encodedPath.replace(/~2F/g, '/')).replace(/\/+/g, '/');
       const parts = decodedPath.split('/').filter(p => p !== "");
       
-      // Every even index in parts is a collection name (0, 2, 4...)
+      // Collections are at even indices in the path parts (0, 2, 4...)
       const collections = parts.filter((_, i) => i % 2 === 0);
-      
       return { project, database, collections };
     }
   } else if (host === "console.firebase.google.com") {
@@ -35,6 +32,7 @@ function getFirestoreInfo() {
       const encodedPath = match[3];
       const decodedPath = decodeURIComponent(encodedPath.replace(/~2F/g, '/')).replace(/\/+/g, '/');
       const parts = decodedPath.split('/').filter(p => p !== "");
+      
       const collections = parts.filter((_, i) => i % 2 === 0);
       return { project, database, collections };
     }
@@ -121,7 +119,7 @@ function getProductionFullFieldPath(keyElem) {
 }
 
 /**
- * Core highlighting logic, now scoped to specific panels or views.
+ * Core highlighting logic, now correctly scoped to panels.
  */
 async function highlightFields() {
   const currentInfo = getFirestoreInfo();
@@ -131,26 +129,17 @@ async function highlightFields() {
   const host = window.location.hostname;
 
   if (host === "localhost" || host === "127.0.0.1") {
-    // --- Emulator Path (Multi-Panel Support) ---
-    // Emulator uses .Firestore-Field-List for each document view.
-    // If nested panels are visible, we iterate through them.
+    // --- Emulator Path ---
     const fieldLists = document.querySelectorAll('.Firestore-Field-List');
     
     fieldLists.forEach((list, index) => {
-      // In Emulator, depth corresponds to which list we are looking at.
-      // Usually, list 0 is the root doc, list 1 is the sub-collection doc, etc.
       const depth = index + 1;
       const panelCollections = currentInfo.collections.slice(0, depth);
 
       const activeRules = settings.filter(rule => {
-        // Project Match (In emulator, we often default to matching if rule is '*' or 'default')
         if (rule.project !== "*" && rule.project.toLowerCase() !== currentInfo.project.toLowerCase() && rule.project !== "default") return false;
-        
-        // Database Match
         if (rule.database !== "*" && rule.database.toLowerCase() !== currentInfo.database.toLowerCase()) return false;
-        
         if (rule.collections.length === 0) return false;
-        
         const ruleStr = rule.collections.join(',');
         const currentStr = panelCollections.join(',').toLowerCase();
         return currentStr.endsWith(ruleStr);
@@ -177,15 +166,20 @@ async function highlightFields() {
     });
 
   } else if (host === "console.firebase.google.com") {
-    // --- Production Path (Multi-Panel Support) ---
+    // --- Production Path ---
     const panels = document.querySelectorAll('.panel-container');
     
     panels.forEach((panel, index) => {
-      // In Firestore Console, panels are Collection -> Doc -> Collection -> Doc
-      // Document panels (where fields exist) are at odd indices (1, 3, 5...)
-      if (index % 2 === 0) return;
+      // Corrected Panel Indexing:
+      // Index 0: Root Collections
+      // Index 1: Doc List (Coll 1)
+      // Index 2: Fields (Doc 1) <- depth 1
+      // Index 3: Doc List (Coll 2)
+      // Index 4: Fields (Doc 2) <- depth 2
+      
+      if (index === 0 || index % 2 !== 0) return; 
 
-      const depth = (index + 1) / 2;
+      const depth = index / 2;
       const panelCollections = currentInfo.collections.slice(0, depth);
       
       const activeRules = settings.filter(rule => {
