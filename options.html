@@ -77,17 +77,17 @@
   <div class="help">
     Enter rules to highlight specific fields in the Firestore Emulator or Production Console.<br>
     <strong>Format:</strong> <code>Project | Database | Collection list in order | Fields</code><br>
-    (Use <code>//</code> to add comments at the end of a line.)<br><br>
+    (Use <code>//</code> to add comments)<br><br>
     <strong>Components:</strong>
     <ul>
       <li><strong>Project:</strong> Your Firebase project ID (e.g., <code>vj-project</code>). In emulator, often <code>default</code>.</li>
-      <li><strong>Database:</strong> Usually <code>default</code> or <code>(default)</code>.</li>
+      <li><strong>Database:</strong> Usually <code>default</code> or <code>-default-</code>.</li>
       <li><strong>Collection list in order:</strong> Comma-separated names of collections in the path (e.g., <code>organizations, groups</code>).</li>
       <li><strong>Fields:</strong> Comma-separated field names to highlight (e.g., <code>name, status</code>).</li>
     </ul>
     <strong>Examples:</strong><br>
-    <code>vj-project | (default) | organizations, groups | name, status</code><br>
-    <code>default | default | questions | learning.objective, examTags</code> (Emulator)
+    <code>vj-project | -default- | organizations, groups | name, status, billing.state</code><br>
+    <code>-ignored in emulator- | default | questions | learning.objective, examTags</code> (Emulator)
   </div>
 
   <div class="section">
